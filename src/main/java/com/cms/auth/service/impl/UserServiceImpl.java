@@ -7,6 +7,7 @@ import com.cms.auth.repository.UserRepository;
 import com.cms.auth.service.UserService;
 import com.cms.common.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse createUser(CreateUserRequest request) {
@@ -28,6 +30,9 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
+
+        // 🔐 HASH PASSWORD
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User saved = userRepository.save(user);
 
