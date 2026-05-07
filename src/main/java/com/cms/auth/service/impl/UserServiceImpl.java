@@ -9,7 +9,9 @@ import com.cms.auth.entity.RefreshToken;
 import com.cms.auth.repository.RefreshTokenRepository;
 import com.cms.auth.repository.UserRepository;
 import com.cms.auth.service.UserService;
+import com.cms.auth.util.PasswordGenerator;
 import com.cms.common.enums.UserStatus;
+import com.cms.common.enums.Role;
 
 
 import lombok.RequiredArgsConstructor;
@@ -69,13 +71,24 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User is not active");
         }
 
+        // 🚫 BLOCK STUDENT AFTER 3 ATTEMPTS
+        if (user.getRole() == com.cms.common.enums.Role.STUDENT &&
+                user.getLoginAttempts() >= 3) {
+
+            throw new RuntimeException("Account locked. Contact admin.");
+        }
+
         // 🔐 CHECK PASSWORD
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 
-            // increment attempts
-            user.setLoginAttempts(user.getLoginAttempts() + 1);
+            int attempts = user.getLoginAttempts() + 1;
+            user.setLoginAttempts(attempts);
             user.setLastFailedAttemptAt(LocalDateTime.now());
             userRepository.save(user);
+
+            if (user.getRole() == com.cms.common.enums.Role.STUDENT && attempts >= 3) {
+                throw new RuntimeException("Account locked after 3 failed attempts. Contact admin.");
+            }
 
             throw new RuntimeException("Invalid email or password");
         }
@@ -161,5 +174,43 @@ public class UserServiceImpl implements UserService {
 
         token.setRevoked(true);
         refreshTokenRepository.save(token);
+    }
+
+    @Override
+    public void resetStudentAttempts(UUID userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() != Role.STUDENT) {
+            throw new RuntimeException("Only students can be reset");
+        }
+
+        user.setLoginAttempts(0);
+        user.setLastFailedAttemptAt(null);
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public String regenerateStudentPassword(UUID userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() != Role.STUDENT) {
+            throw new RuntimeException("Only students allowed");
+        }
+
+        String plainPassword = PasswordGenerator.generate();
+
+        user.setPassword(passwordEncoder.encode(plainPassword));
+        user.setLoginAttempts(0);
+        user.setLastFailedAttemptAt(null);
+
+        userRepository.save(user);
+
+        // 🔥 TEMP — return password (later SMS)
+        return plainPassword;
     }
 }

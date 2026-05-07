@@ -15,9 +15,14 @@ public interface UserService {
 
     LoginResponse login(LoginRequest request);
 
-    // ✅ ADD THIS
+    // ✅ REFRESH TOKEN
     LoginResponse refresh(String refreshToken);
 
-    // ✅ ADD THIS (for logout next)
+    // ✅ LOGOUT
     void logout(String refreshToken);
+
+    // ✅ ADD THESE NEW METHODS
+    void resetStudentAttempts(UUID userId);
+
+    String regenerateStudentPassword(UUID userId);
 }
