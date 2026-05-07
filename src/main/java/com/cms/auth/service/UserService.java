@@ -14,4 +14,10 @@ public interface UserService {
     UserResponse getUser(UUID id);
 
     LoginResponse login(LoginRequest request);
+
+    // ✅ ADD THIS
+    LoginResponse refresh(String refreshToken);
+
+    // ✅ ADD THIS (for logout next)
+    void logout(String refreshToken);
 }
