@@ -35,11 +35,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(CreateUserRequest request) {
 
+        User user = new User();
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        User user = new User();
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
@@ -47,7 +53,6 @@ public class UserServiceImpl implements UserService {
         // 🔐 HASH PASSWORD
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // optional defaults
         user.setLoginAttempts(0);
 
         User saved = userRepository.save(user);
@@ -61,8 +66,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         // check status
         if (user.getStatus() != UserStatus.ACTIVE) {
@@ -77,7 +82,7 @@ public class UserServiceImpl implements UserService {
             user.setLastFailedAttemptAt(LocalDateTime.now());
             userRepository.save(user);
 
-            throw new RuntimeException("Invalid email or password");
+            throw new RuntimeException("Invalid username or password");
         }
 
         // reset attempts on success
@@ -124,6 +129,7 @@ public class UserServiceImpl implements UserService {
     private UserResponse map(User user) {
         UserResponse res = new UserResponse();
         res.setId(user.getId());
+        res.setUsername(user.getUsername());
         res.setEmail(user.getEmail());
         res.setRole(user.getRole());
         res.setStatus(user.getStatus());

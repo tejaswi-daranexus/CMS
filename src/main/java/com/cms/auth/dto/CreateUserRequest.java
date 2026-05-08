@@ -13,6 +13,9 @@ public class CreateUserRequest {
     private String email;
 
     @NotNull
+    private String username;
+
+    @NotNull
     private Role role;
 
     @NotNull

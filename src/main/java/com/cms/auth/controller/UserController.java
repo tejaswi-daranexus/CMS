@@ -18,6 +18,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ApiResponse<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return new ApiResponse<>(
