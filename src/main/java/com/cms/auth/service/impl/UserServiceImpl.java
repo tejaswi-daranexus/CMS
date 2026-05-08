@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -186,6 +188,11 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Only students can be reset");
         }
 
+        // 🔥 ADD THIS VALIDATION
+        if (user.getLoginAttempts() != 3) {
+            throw new RuntimeException("User is not locked (attempts != 3)");
+        }
+
         user.setLoginAttempts(0);
         user.setLastFailedAttemptAt(null);
 
@@ -202,6 +209,10 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Only students allowed");
         }
 
+        if (user.getLoginAttempts() != 3) {
+            throw new RuntimeException("User is not locked (attempts != 3)");
+        }
+
         String plainPassword = PasswordGenerator.generate();
 
         user.setPassword(passwordEncoder.encode(plainPassword));
@@ -212,5 +223,76 @@ public class UserServiceImpl implements UserService {
 
         // 🔥 TEMP — return password (later SMS)
         return plainPassword;
+    }
+
+    @Override
+    public List<String> resetStudentAttemptsBulk(List<UUID> userIds) {
+
+        List<User> users = userRepository.findAllById(userIds);
+
+        List<String> processed = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+
+        for (User user : users) {
+
+            if (user.getRole() != Role.STUDENT) {
+                skipped.add(user.getEmail() + " (not a student)");
+                continue;
+            }
+
+            if (user.getLoginAttempts() != 3) {
+                skipped.add(user.getEmail() + " (attempts != 3)");
+                continue;
+            }
+
+            user.setLoginAttempts(0);
+            user.setLastFailedAttemptAt(null);
+            processed.add(user.getEmail());
+        }
+
+        userRepository.saveAll(users);
+
+        return List.of(
+                "Processed: " + processed,
+                "Skipped: " + skipped
+        );
+    }
+
+    @Override
+    public List<String> regenerateStudentPasswordBulk(List<UUID> userIds) {
+
+        List<User> users = userRepository.findAllById(userIds);
+
+        List<String> processed = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+
+        for (User user : users) {
+
+            if (user.getRole() != Role.STUDENT) {
+                skipped.add(user.getEmail() + " (not a student)");
+                continue;
+            }
+
+            if (user.getLoginAttempts() != 3) {
+                skipped.add(user.getEmail() + " (attempts != 3)");
+                continue;
+            }
+
+            String plainPassword = PasswordGenerator.generate();
+
+            user.setPassword(passwordEncoder.encode(plainPassword));
+            user.setLoginAttempts(0);
+            user.setLastFailedAttemptAt(null);
+
+            processed.add(user.getEmail() + " : " + plainPassword);
+        }
+
+        userRepository.saveAll(users);
+
+        List<String> response = new ArrayList<>();
+        response.add("Processed: " + processed);
+        response.add("Skipped: " + skipped);
+
+        return response;
     }
 }

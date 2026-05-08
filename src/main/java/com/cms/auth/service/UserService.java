@@ -6,6 +6,7 @@ import com.cms.auth.dto.LoginRequest;
 import com.cms.auth.dto.LoginResponse;
 
 import java.util.UUID;
+import java.util.List;
 
 public interface UserService {
 
@@ -21,8 +22,13 @@ public interface UserService {
     // ✅ LOGOUT
     void logout(String refreshToken);
 
-    // ✅ ADD THESE NEW METHODS
+    // ✅ SINGLE OPERATIONS
     void resetStudentAttempts(UUID userId);
 
     String regenerateStudentPassword(UUID userId);
+
+    // ✅ BULK OPERATIONS (ADD THESE)
+    List<String> resetStudentAttemptsBulk(List<UUID> userIds);
+
+    List<String> regenerateStudentPasswordBulk(List<UUID> userIds);
 }
