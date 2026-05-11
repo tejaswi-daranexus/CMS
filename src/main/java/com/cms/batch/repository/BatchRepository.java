@@ -1,0 +1,12 @@
+package com.cms.batch.repository;
+
+import com.cms.batch.entity.Batch;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.UUID;
+
+public interface BatchRepository extends JpaRepository<Batch, UUID> {
+
+    List<Batch> findByDeletedAtIsNull();
+}
