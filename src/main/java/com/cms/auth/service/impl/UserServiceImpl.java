@@ -228,21 +228,39 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponse refresh(String refreshTokenValue) {
 
-        RefreshToken token = refreshTokenRepository.findByToken(refreshTokenValue)
+        RefreshToken oldToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 
-        if (token.isRevoked() || token.getExpiryDate().isBefore(LocalDateTime.now())) {
+        // ❌ token revoked or expired
+        if (oldToken.isRevoked() || oldToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Refresh token expired or revoked");
         }
 
-        User user = userRepository.findById(token.getUserId())
+        // ✅ revoke old token
+        oldToken.setRevoked(true);
+        refreshTokenRepository.save(oldToken);
+
+        // ✅ get user
+        User user = userRepository.findById(oldToken.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // ✅ generate NEW access token
         String newAccessToken = jwtService.generateToken(user);
 
+        // ✅ generate NEW refresh token
+        String newRefreshTokenValue = UUID.randomUUID().toString();
+
+        RefreshToken newRefreshToken = new RefreshToken();
+        newRefreshToken.setUserId(user.getId());
+        newRefreshToken.setToken(newRefreshTokenValue);
+        newRefreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+
+        refreshTokenRepository.save(newRefreshToken);
+
+        // ✅ return NEW refresh token
         return new LoginResponse(
                 newAccessToken,
-                refreshTokenValue,
+                newRefreshTokenValue,
                 user.getId().toString(),
                 user.getRole()
         );
