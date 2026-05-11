@@ -11,6 +11,7 @@ import com.cms.auth.entity.User;
 import com.cms.auth.entity.RefreshToken;
 import com.cms.auth.repository.RefreshTokenRepository;
 import com.cms.auth.repository.UserRepository;
+import com.cms.auth.service.MailService;
 import com.cms.auth.service.UserService;
 import com.cms.auth.util.PasswordGenerator;
 import com.cms.common.enums.UserStatus;
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final com.cms.auth.security.JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final MailService mailService;
 
     // ==========================
     // ✅ CREATE USER
@@ -169,7 +171,7 @@ public class UserServiceImpl implements UserService {
             user.setLoginAttempts(attempts);
             user.setLastFailedAttemptAt(LocalDateTime.now());
             userRepository.save(user);
-            
+
             if (user.getRole() == com.cms.common.enums.Role.STUDENT && attempts >= 3) {
                 throw new RuntimeException("Account locked after 3 failed attempts. Contact admin.");
             }
@@ -325,16 +327,26 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User is not locked (attempts != 3)");
         }
 
+        // ✅ generate password
         String plainPassword = PasswordGenerator.generate();
 
+        // ✅ save hashed password
         user.setPassword(passwordEncoder.encode(plainPassword));
+
+        // ✅ reset lock
         user.setLoginAttempts(0);
         user.setLastFailedAttemptAt(null);
 
         userRepository.save(user);
 
-        // 🔥 TEMP — return password (later SMS)
-        return plainPassword;
+        // ✅ send mail
+        mailService.sendPasswordEmail(
+                user.getEmail(),
+                user.getUsername(),
+                plainPassword
+        );
+
+        return "Password sent to registered email";
     }
 
     @Override
@@ -390,18 +402,37 @@ public class UserServiceImpl implements UserService {
                 continue;
             }
 
-            String plainPassword = PasswordGenerator.generate();
+            try {
 
-            user.setPassword(passwordEncoder.encode(plainPassword));
-            user.setLoginAttempts(0);
-            user.setLastFailedAttemptAt(null);
+                // ✅ generate password
+                String plainPassword = PasswordGenerator.generate();
 
-            processed.add(user.getEmail() + " : " + plainPassword);
+                // ✅ save hashed password
+                user.setPassword(passwordEncoder.encode(plainPassword));
+
+                // ✅ reset attempts
+                user.setLoginAttempts(0);
+                user.setLastFailedAttemptAt(null);
+
+                // ✅ send mail
+                mailService.sendPasswordEmail(
+                        user.getEmail(),
+                        user.getUsername(),
+                        plainPassword
+                );
+
+                processed.add(user.getEmail());
+
+            } catch (Exception e) {
+
+                skipped.add(user.getEmail() + " (mail failed)");
+            }
         }
 
         userRepository.saveAll(users);
 
         List<String> response = new ArrayList<>();
+
         response.add("Processed: " + processed);
         response.add("Skipped: " + skipped);
 

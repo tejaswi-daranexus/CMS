@@ -2,6 +2,7 @@ package com.cms.auth.scheduler;
 
 import com.cms.auth.entity.User;
 import com.cms.auth.repository.UserRepository;
+import com.cms.auth.service.MailService;
 import com.cms.auth.util.PasswordGenerator;
 import com.cms.common.enums.Role;
 import com.cms.common.enums.UserStatus;
@@ -19,35 +20,67 @@ public class StudentPasswordScheduler {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
 
     // 🕕 Runs every day at 6 AM
     @Scheduled(cron = "0 0 6 * * ?")
-    //@Scheduled(fixedRate = 60000)  // every 1 minute
+    //@Scheduled(fixedRate = 60000)
+
+    // 🔥 TEST MODE
+    //@Scheduled(fixedRate = 60000)
+
     public void generateDailyPasswords() {
 
         List<User> students =
-                userRepository.findByRoleAndStatus(Role.STUDENT, UserStatus.ACTIVE);
+                userRepository.findByRoleAndStatus(
+                        Role.STUDENT,
+                        UserStatus.ACTIVE
+                );
 
         for (User student : students) {
 
-            // generate plain password
-            String plainPassword = PasswordGenerator.generate();
+            try {
 
-            // hash it
-            String hashedPassword = passwordEncoder.encode(plainPassword);
+                // ✅ generate plain password
+                String plainPassword = PasswordGenerator.generate();
 
-            // update user
-            student.setPassword(hashedPassword);
-            student.setLoginAttempts(0);
-            student.setLastFailedAttemptAt(null);
+                // ✅ hash password
+                String hashedPassword =
+                        passwordEncoder.encode(plainPassword);
 
-            userRepository.save(student);
+                // ✅ update student
+                student.setPassword(hashedPassword);
+                student.setLoginAttempts(0);
+                student.setLastFailedAttemptAt(null);
 
-            // 🔥 TEMP: log password (REMOVE in production)
-            System.out.println("Student: " + student.getEmail()
-                    + " | New Password: " + plainPassword);
+                userRepository.save(student);
+
+                // ✅ SEND EMAIL
+                mailService.sendPasswordEmail(
+                        student.getEmail(),
+                        student.getUsername(),
+                        plainPassword
+                );
+
+                System.out.println(
+                        "✅ Password generated + mailed to: "
+                                + student.getEmail()
+                );
+
+            } catch (Exception e) {
+
+                System.out.println(
+                        "❌ Failed for: "
+                                + student.getEmail()
+                );
+
+                e.printStackTrace();
+            }
         }
 
-        System.out.println("✅ Daily student passwords generated at " + LocalDateTime.now());
+        System.out.println(
+                "✅ Daily student passwords generated at "
+                        + LocalDateTime.now()
+        );
     }
 }
