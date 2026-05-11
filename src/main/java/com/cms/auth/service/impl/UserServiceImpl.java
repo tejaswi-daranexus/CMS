@@ -1,6 +1,9 @@
 package com.cms.auth.service.impl;
 
 import com.cms.auth.dto.CreateUserRequest;
+import com.cms.auth.dto.CreateAdminRequest;
+import com.cms.auth.dto.CreateFacultyRequest;
+import com.cms.auth.dto.CreateStudentRequest;
 import com.cms.auth.dto.LoginRequest;
 import com.cms.auth.dto.LoginResponse;
 import com.cms.auth.dto.UserResponse;
@@ -39,11 +42,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(CreateUserRequest request) {
 
+        User user = new User();
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        User user = new User();
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
@@ -51,7 +60,80 @@ public class UserServiceImpl implements UserService {
         // 🔐 HASH PASSWORD
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // optional defaults
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+    @Override
+    public UserResponse createAdmin(CreateAdminRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.ADMIN);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+
+    @Override
+    public UserResponse createFaculty(CreateFacultyRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.FACULTY);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+
+    @Override
+    public UserResponse createStudent(CreateStudentRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.STUDENT);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         user.setLoginAttempts(0);
 
         User saved = userRepository.save(user);
@@ -65,8 +147,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         // check status
         if (user.getStatus() != UserStatus.ACTIVE) {
@@ -87,12 +169,12 @@ public class UserServiceImpl implements UserService {
             user.setLoginAttempts(attempts);
             user.setLastFailedAttemptAt(LocalDateTime.now());
             userRepository.save(user);
-
+            
             if (user.getRole() == com.cms.common.enums.Role.STUDENT && attempts >= 3) {
                 throw new RuntimeException("Account locked after 3 failed attempts. Contact admin.");
             }
 
-            throw new RuntimeException("Invalid email or password");
+            throw new RuntimeException("Invalid username or password");
         }
 
         // reset attempts on success
@@ -139,30 +221,60 @@ public class UserServiceImpl implements UserService {
     private UserResponse map(User user) {
         UserResponse res = new UserResponse();
         res.setId(user.getId());
+        res.setUsername(user.getUsername());
         res.setEmail(user.getEmail());
         res.setRole(user.getRole());
         res.setStatus(user.getStatus());
         return res;
     }
 
+    private void validateUserCreation(String username, String email) {
+
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already exists");
+        }
+    }
+
     @Override
     public LoginResponse refresh(String refreshTokenValue) {
 
-        RefreshToken token = refreshTokenRepository.findByToken(refreshTokenValue)
+        RefreshToken oldToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 
-        if (token.isRevoked() || token.getExpiryDate().isBefore(LocalDateTime.now())) {
+        // ❌ token revoked or expired
+        if (oldToken.isRevoked() || oldToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Refresh token expired or revoked");
         }
 
-        User user = userRepository.findById(token.getUserId())
+        // ✅ revoke old token
+        oldToken.setRevoked(true);
+        refreshTokenRepository.save(oldToken);
+
+        // ✅ get user
+        User user = userRepository.findById(oldToken.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // ✅ generate NEW access token
         String newAccessToken = jwtService.generateToken(user);
 
+        // ✅ generate NEW refresh token
+        String newRefreshTokenValue = UUID.randomUUID().toString();
+
+        RefreshToken newRefreshToken = new RefreshToken();
+        newRefreshToken.setUserId(user.getId());
+        newRefreshToken.setToken(newRefreshTokenValue);
+        newRefreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+
+        refreshTokenRepository.save(newRefreshToken);
+
+        // ✅ return NEW refresh token
         return new LoginResponse(
                 newAccessToken,
-                refreshTokenValue,
+                newRefreshTokenValue,
                 user.getId().toString(),
                 user.getRole()
         );
