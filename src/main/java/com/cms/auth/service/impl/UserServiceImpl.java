@@ -1,6 +1,9 @@
 package com.cms.auth.service.impl;
 
 import com.cms.auth.dto.CreateUserRequest;
+import com.cms.auth.dto.CreateAdminRequest;
+import com.cms.auth.dto.CreateFacultyRequest;
+import com.cms.auth.dto.CreateStudentRequest;
 import com.cms.auth.dto.LoginRequest;
 import com.cms.auth.dto.LoginResponse;
 import com.cms.auth.dto.UserResponse;
@@ -10,6 +13,7 @@ import com.cms.auth.repository.RefreshTokenRepository;
 import com.cms.auth.repository.UserRepository;
 import com.cms.auth.service.UserService;
 import com.cms.common.enums.UserStatus;
+import com.cms.common.enums.Role;
 
 
 import lombok.RequiredArgsConstructor;
@@ -51,6 +55,80 @@ public class UserServiceImpl implements UserService {
         user.setStatus(UserStatus.ACTIVE);
 
         // 🔐 HASH PASSWORD
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+    @Override
+    public UserResponse createAdmin(CreateAdminRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.ADMIN);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+
+    @Override
+    public UserResponse createFaculty(CreateFacultyRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.FACULTY);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setLoginAttempts(0);
+
+        User saved = userRepository.save(user);
+
+        return map(saved);
+    }
+
+
+    @Override
+    public UserResponse createStudent(CreateStudentRequest request) {
+
+        validateUserCreation(request.getUsername(), request.getEmail());
+
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+
+        // 🔥 BACKEND CONTROLS ROLE
+        user.setRole(Role.STUDENT);
+
+        user.setStatus(UserStatus.ACTIVE);
+
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         user.setLoginAttempts(0);
@@ -134,6 +212,17 @@ public class UserServiceImpl implements UserService {
         res.setRole(user.getRole());
         res.setStatus(user.getStatus());
         return res;
+    }
+
+    private void validateUserCreation(String username, String email) {
+
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already exists");
+        }
     }
 
     @Override
