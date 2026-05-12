@@ -1,6 +1,8 @@
 package com.cms.student.entity;
 
 import com.cms.auth.entity.User;
+import com.cms.batch.entity.Batch;
+import com.cms.common.entity.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +13,7 @@ import java.util.UUID;
 @Table(name = "students")
 @Getter
 @Setter
-public class Student {
+public class Student extends BaseAuditEntity {
 
     @Id
     private UUID userId;
@@ -21,11 +23,14 @@ public class Student {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
     private String fullName;
 
     private String phoneE164;
 
     private String parentPhone;
 
-    private UUID batchId;
+    @ManyToOne
+    @JoinColumn(name = "batch_id")
+    private Batch batch;
 }
