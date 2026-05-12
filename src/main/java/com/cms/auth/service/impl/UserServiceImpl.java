@@ -22,6 +22,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -209,12 +212,72 @@ public class UserServiceImpl implements UserService {
     // ✅ GET USER
     // ==========================
     @Override
-    public UserResponse getUser(UUID id) {
+    public UserResponse getUser(UUID id,
+                                Authentication authentication) {
 
-        User user = userRepository.findById(id)
+        User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return map(user);
+        String callerRole =
+                authentication.getAuthorities()
+                        .iterator()
+                        .next()
+                        .getAuthority();
+
+    /*
+        ROLE_SUPER_ADMIN
+        ROLE_ADMIN
+    */
+
+        // ✅ SUPER_ADMIN can access everyone
+        if (callerRole.equals("ROLE_SUPER_ADMIN")) {
+            return map(targetUser);
+        }
+
+        // ✅ ADMIN restrictions
+        if (callerRole.equals("ROLE_ADMIN")) {
+
+            // ❌ admin cannot access admin/super_admin
+            if (targetUser.getRole() == Role.ADMIN ||
+                    targetUser.getRole() == Role.SUPER_ADMIN) {
+
+                throw new RuntimeException(
+                        "Admins cannot access admin accounts"
+                );
+            }
+
+            return map(targetUser);
+        }
+
+        throw new RuntimeException("Access Denied");
+    }
+
+    @Override
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+
+        return userRepository.findAll(pageable)
+                .map(this::map);
+    }
+
+    @Override
+    public Page<UserResponse> getAllStudents(Pageable pageable) {
+
+        return userRepository.findByRole(Role.STUDENT, pageable)
+                .map(this::map);
+    }
+
+    @Override
+    public Page<UserResponse> getAllFaculty(Pageable pageable) {
+
+        return userRepository.findByRole(Role.FACULTY, pageable)
+                .map(this::map);
+    }
+
+    @Override
+    public Page<UserResponse> getAllAdmins(Pageable pageable) {
+
+        return userRepository.findByRole(Role.ADMIN, pageable)
+                .map(this::map);
     }
 
     // ==========================

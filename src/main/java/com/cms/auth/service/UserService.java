@@ -4,6 +4,8 @@ import com.cms.auth.dto.*;
 
 import java.util.UUID;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
@@ -15,7 +17,18 @@ public interface UserService {
 
     UserResponse createStudent(CreateStudentRequest request);
 
-    UserResponse getUser(UUID id);
+    UserResponse getUser(
+            UUID id,
+            org.springframework.security.core.Authentication authentication
+    );
+
+    Page<UserResponse> getAllUsers(Pageable pageable);
+
+    Page<UserResponse> getAllStudents(Pageable pageable);
+
+    Page<UserResponse> getAllFaculty(Pageable pageable);
+
+    Page<UserResponse> getAllAdmins(Pageable pageable);
 
     LoginResponse login(LoginRequest request);
 

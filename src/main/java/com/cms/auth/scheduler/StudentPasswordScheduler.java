@@ -23,8 +23,10 @@ public class StudentPasswordScheduler {
     private final MailService mailService;
 
     // 🕕 Runs every day at 6 AM
-    @Scheduled(cron = "0 0 6 * * ?")
+    //@Scheduled(cron = "0 0 6 * * ?")
     //@Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 0 0 * * ?") // Runs every day at 12 AM
+
 
     // 🔥 TEST MODE
     //@Scheduled(fixedRate = 60000)

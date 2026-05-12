@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
@@ -73,11 +75,67 @@ public class UserController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    public ApiResponse<UserResponse> getUser(@PathVariable UUID id) {
+    public ApiResponse<UserResponse> getUser(
+            @PathVariable UUID id,
+            org.springframework.security.core.Authentication authentication
+    ) {
+
         return new ApiResponse<>(
                 true,
                 "User fetched successfully",
-                userService.getUser(id)
+                userService.getUser(id, authentication)
+        );
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ApiResponse<Page<UserResponse>> getAllUsers(
+            Pageable pageable
+    ) {
+
+        return new ApiResponse<>(
+                true,
+                "Users fetched successfully",
+                userService.getAllUsers(pageable)
+        );
+    }
+
+    @GetMapping("/students")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ApiResponse<Page<UserResponse>> getAllStudents(
+            Pageable pageable
+    ) {
+
+        return new ApiResponse<>(
+                true,
+                "Students fetched successfully",
+                userService.getAllStudents(pageable)
+        );
+    }
+
+    @GetMapping("/faculty")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ApiResponse<Page<UserResponse>> getAllFaculty(
+            Pageable pageable
+    ) {
+
+        return new ApiResponse<>(
+                true,
+                "Faculty fetched successfully",
+                userService.getAllFaculty(pageable)
+        );
+    }
+
+    @GetMapping("/admins")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<Page<UserResponse>> getAllAdmins(
+            Pageable pageable
+    ) {
+
+        return new ApiResponse<>(
+                true,
+                "Admins fetched successfully",
+                userService.getAllAdmins(pageable)
         );
     }
 }
