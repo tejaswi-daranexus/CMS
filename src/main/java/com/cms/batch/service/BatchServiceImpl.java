@@ -78,6 +78,10 @@ public class BatchServiceImpl implements BatchService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
+        if (student.getBatch() != null) {
+            throw new RuntimeException("Student is already assigned to another batch");
+        }
+
         student.setBatch(batch);
 
         studentRepository.save(student);
@@ -88,6 +92,10 @@ public class BatchServiceImpl implements BatchService {
 
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        if (student.getBatch() == null) {
+            throw new RuntimeException("Student is not assigned to any batch");
+        }
 
         student.setBatch(null);
 
