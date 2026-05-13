@@ -1,4 +1,4 @@
-package com.cms.batch.entity;
+package com.cms.academicyear.entity;
 
 import com.cms.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -9,27 +9,24 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "batches")
+@Table(name = "academic_years")
 @Getter
 @Setter
-public class Batch extends BaseEntity {
+public class AcademicYear extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = false, unique = true, length = 20)
     private String name;
 
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Enumerated(EnumType.STRING)
-    private Status status;
-
-    public enum Status {
-        ACTIVE,
-        COMPLETED,
-        ARCHIVED
-    }
+    @Column(name = "is_active", nullable = false)
+    private boolean active = false;
 }

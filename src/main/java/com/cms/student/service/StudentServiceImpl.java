@@ -37,7 +37,7 @@ public class StudentServiceImpl implements StudentService {
         Student student = new Student();
         student.setUser(user);
         student.setFullName(request.fullName());
-        student.setPhoneE164(request.phoneE164());
+        student.setPhoneNumber(request.phoneE164());
         student.setParentPhone(request.parentPhone());
 
         studentRepository.save(student);
@@ -46,7 +46,7 @@ public class StudentServiceImpl implements StudentService {
                 user.getId(),
                 student.getFullName(),
                 user.getEmail(),
-                student.getPhoneE164()
+                student.getPhoneNumber()
         );
     }
 
@@ -60,7 +60,7 @@ public class StudentServiceImpl implements StudentService {
                         student.getUser().getId(),
                         student.getFullName(),
                         student.getUser().getEmail(),
-                        student.getPhoneE164()
+                        student.getPhoneNumber()
                 ))
                 .toList();
     }
@@ -72,7 +72,7 @@ public class StudentServiceImpl implements StudentService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         student.setFullName(request.fullName());
-        student.setPhoneE164(request.phoneE164());
+        student.setPhoneNumber(request.phoneE164());
         student.setParentPhone(request.parentPhone());
 
         studentRepository.save(student);
@@ -81,7 +81,7 @@ public class StudentServiceImpl implements StudentService {
                 student.getUser().getId(),
                 student.getFullName(),
                 student.getUser().getEmail(),
-                student.getPhoneE164()
+                student.getPhoneNumber()
         );
     }
 
