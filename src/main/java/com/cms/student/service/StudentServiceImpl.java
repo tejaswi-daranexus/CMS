@@ -38,7 +38,6 @@ public class StudentServiceImpl implements StudentService {
         student.setUser(user);
         student.setFullName(request.fullName());
         student.setPhoneNumber(request.phoneE164());
-        student.setParentPhone(request.parentPhone());
 
         studentRepository.save(student);
 
@@ -73,7 +72,6 @@ public class StudentServiceImpl implements StudentService {
 
         student.setFullName(request.fullName());
         student.setPhoneNumber(request.phoneE164());
-        student.setParentPhone(request.parentPhone());
 
         studentRepository.save(student);
 
