@@ -36,6 +36,9 @@ public class Faculty extends BaseEntity {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Column(name = "personal_email", unique = true, length = 100)
+    private String personalEmail;
+
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
