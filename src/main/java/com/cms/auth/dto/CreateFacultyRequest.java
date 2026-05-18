@@ -1,19 +1,39 @@
 package com.cms.auth.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
+
+import java.util.UUID;
 
 @Data
 public class CreateFacultyRequest {
 
-    @NotNull
+    @NotBlank
     private String username;
 
     @Email
-    @NotNull
+    @NotBlank
     private String email;
 
-    @NotNull
+    @NotBlank
     private String password;
+
+    @NotNull
+    private UUID departmentId;
+
+    @NotBlank
+    private String employeeId;
+
+    @NotBlank
+    private String fullName;
+
+    @NotBlank
+    @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
+    private String phoneNumber;
+
+    @NotBlank
+    private String designation;
 }

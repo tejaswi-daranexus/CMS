@@ -1,0 +1,14 @@
+package com.cms.common.enums;
+
+public enum AdminDesignation {
+    SUPER_ADMIN,
+    ADMINISTRATOR,
+    PRINCIPAL,
+    DEAN,
+    HOD,
+    EXAM_CONTROLLER,
+    ACADEMIC_COORDINATOR,
+    TRAINING_AND_PLACEMENT_OFFICER,
+    SYSTEM_ADMINISTRATOR,
+    DIRECTOR
+}

@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/cms/api/v1/admin")
 @RequiredArgsConstructor
-public class AdminController {
+public class AuthAdminController {
 
     private final UserService userService;
     //private final MailService mailService;

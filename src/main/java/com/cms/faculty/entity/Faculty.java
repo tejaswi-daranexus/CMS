@@ -61,7 +61,7 @@ public class Faculty extends BaseEntity {
     @Column(name = "permanent_address", length = 2000)
     private String permanentAddress;
 
-    @Column(name = "phone_number", length = 20)
+    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
     private String phoneNumber;
 
     @Column(name = "emergency_contact_name", length = 100)

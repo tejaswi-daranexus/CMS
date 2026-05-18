@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
-    UserResponse createUser(CreateUserRequest request);
+    //UserResponse createUser(CreateUserRequest request);
 
     UserResponse createAdmin(CreateAdminRequest request);
 

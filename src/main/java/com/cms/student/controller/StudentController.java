@@ -1,54 +1,25 @@
 package com.cms.student.controller;
 
-import com.cms.student.dto.StudentCreateRequest;
-import com.cms.student.dto.StudentResponse;
-import com.cms.student.dto.StudentUpdateRequest;
-import com.cms.student.service.StudentService;
+import com.cms.student.dto.StudentDetailResponse;
+import com.cms.student.service.StudentQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.UUID;
-
 @RestController
-@RequestMapping("/api/v1/students")
+@RequestMapping("/cms/api/v1/students")
 @RequiredArgsConstructor
 public class StudentController {
 
-    private final StudentService studentService;
+    private final StudentQueryService studentQueryService;
 
-    @PostMapping
-    public ResponseEntity<StudentResponse> createStudent(
-            @RequestBody StudentCreateRequest request
-    ) {
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<StudentDetailResponse> getMyProfile() {
+
         return ResponseEntity.ok(
-                studentService.createStudent(request)
+                studentQueryService.getMyProfile()
         );
-    }
-
-    @GetMapping
-    public ResponseEntity<List<StudentResponse>> getAllStudents() {
-        return ResponseEntity.ok(
-                studentService.getAllStudents()
-        );
-    }
-
-    @PutMapping("/{studentId}")
-    public ResponseEntity<StudentResponse> updateStudent(
-            @PathVariable UUID studentId,
-            @RequestBody StudentUpdateRequest request
-    ) {
-        return ResponseEntity.ok(
-                studentService.updateStudent(studentId, request)
-        );
-    }
-
-    @DeleteMapping("/{studentId}")
-    public ResponseEntity<String> deleteStudent(
-            @PathVariable UUID studentId
-    ) {
-        studentService.deleteStudent(studentId);
-        return ResponseEntity.ok("Student deleted successfully");
     }
 }

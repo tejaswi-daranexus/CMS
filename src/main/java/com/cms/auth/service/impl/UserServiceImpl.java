@@ -11,6 +11,23 @@ import com.cms.auth.entity.User;
 import com.cms.auth.entity.RefreshToken;
 import com.cms.auth.repository.RefreshTokenRepository;
 import com.cms.auth.repository.UserRepository;
+
+import com.cms.admin.entity.Admin;
+import com.cms.admin.repository.AdminRepository;
+
+import com.cms.faculty.entity.Faculty;
+import com.cms.faculty.repository.FacultyRepository;
+
+import com.cms.student.entity.Student;
+import com.cms.student.repository.StudentRepository;
+
+import com.cms.department.entity.Department;
+import com.cms.department.repository.DepartmentRepository;
+
+import com.cms.section.entity.Section;
+import com.cms.section.repository.SectionRepository;
+
+
 import com.cms.auth.service.MailService;
 import com.cms.auth.service.UserService;
 import com.cms.auth.util.PasswordGenerator;
@@ -26,6 +43,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.List;
@@ -36,15 +55,24 @@ import java.util.ArrayList;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    private final AdminRepository adminRepository;
+    private final FacultyRepository facultyRepository;
+    private final StudentRepository studentRepository;
+
+    private final DepartmentRepository departmentRepository;
+    private final SectionRepository sectionRepository;
+
     private final PasswordEncoder passwordEncoder;
     private final com.cms.auth.security.JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final MailService mailService;
 
+
     // ==========================
     // ✅ CREATE USER
     // ==========================
-    @Override
+    /*@Override
     public UserResponse createUser(CreateUserRequest request) {
 
         User user = new User();
@@ -71,79 +99,146 @@ public class UserServiceImpl implements UserService {
 
         return map(saved);
     }
+    */
 
     @Override
+    @Transactional
     public UserResponse createAdmin(CreateAdminRequest request) {
 
         validateUserCreation(request.getUsername(), request.getEmail());
 
+        if (adminRepository.existsByEmployeeId(request.getEmployeeId())) {
+            throw new RuntimeException("Employee ID already exists");
+        }
+
+        if (adminRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new RuntimeException("Phone number already exists");
+        }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new RuntimeException("Department not found"));
+
         User user = new User();
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-
-        // 🔥 BACKEND CONTROLS ROLE
-        user.setRole(Role.ADMIN);
-
-        user.setStatus(UserStatus.ACTIVE);
-
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        user.setRole(Role.ADMIN);
+        user.setStatus(UserStatus.ACTIVE);
         user.setLoginAttempts(0);
 
-        User saved = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        return map(saved);
+        Admin admin = new Admin();
+
+        admin.setUser(savedUser);
+        admin.setDepartment(department);
+
+        admin.setEmployeeId(request.getEmployeeId());
+        admin.setFullName(request.getFullName());
+        admin.setPhoneNumber(request.getPhoneNumber());
+        admin.setDesignation(request.getDesignation());
+
+        adminRepository.save(admin);
+
+        return map(savedUser);
     }
 
 
     @Override
+    @Transactional
     public UserResponse createFaculty(CreateFacultyRequest request) {
 
         validateUserCreation(request.getUsername(), request.getEmail());
 
+        if (facultyRepository.existsByEmployeeId(request.getEmployeeId())) {
+            throw new RuntimeException("Employee ID already exists");
+        }
+
+        if (facultyRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new RuntimeException("Phone number already exists");
+        }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new RuntimeException("Department not found"));
+
         User user = new User();
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-
-        // 🔥 BACKEND CONTROLS ROLE
-        user.setRole(Role.FACULTY);
-
-        user.setStatus(UserStatus.ACTIVE);
-
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        user.setRole(Role.FACULTY);
+        user.setStatus(UserStatus.ACTIVE);
         user.setLoginAttempts(0);
 
-        User saved = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        return map(saved);
+        Faculty faculty = new Faculty();
+
+        faculty.setUser(savedUser);
+
+        faculty.setDepartment(department);
+
+        faculty.setEmployeeId(request.getEmployeeId());
+        faculty.setFullName(request.getFullName());
+        faculty.setPhoneNumber(request.getPhoneNumber());
+
+        faculty.setDesignation(
+                com.cms.common.enums.FacultyDesignation.valueOf(
+                        request.getDesignation()
+                )
+        );
+
+        facultyRepository.save(faculty);
+
+        return map(savedUser);
     }
 
 
     @Override
+    @Transactional
     public UserResponse createStudent(CreateStudentRequest request) {
 
         validateUserCreation(request.getUsername(), request.getEmail());
+
+        if (studentRepository.existsByRollNumber(request.getRollNumber())) {
+            throw new RuntimeException("Roll number already exists");
+        }
+
+        Section section = sectionRepository.findById(request.getSectionId())
+                .orElseThrow(() -> new RuntimeException("Section not found"));
 
         User user = new User();
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-
-        // 🔥 BACKEND CONTROLS ROLE
-        user.setRole(Role.STUDENT);
-
-        user.setStatus(UserStatus.ACTIVE);
-
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        user.setRole(Role.STUDENT);
+        user.setStatus(UserStatus.ACTIVE);
         user.setLoginAttempts(0);
 
-        User saved = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        return map(saved);
+        Student student = new Student();
+
+        student.setUser(savedUser);
+
+        student.setSection(section);
+
+        student.setRollNumber(request.getRollNumber());
+        student.setFullName(request.getFullName());
+        student.setPhoneNumber(request.getPhoneNumber());
+
+        student.setAdmissionYear(request.getAdmissionYear());
+
+        student.setProfileCompleted(false);
+
+        studentRepository.save(student);
+
+        return map(savedUser);
     }
 
     // ==========================

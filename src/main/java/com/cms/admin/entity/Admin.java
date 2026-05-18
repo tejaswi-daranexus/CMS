@@ -2,8 +2,10 @@ package com.cms.admin.entity;
 
 import com.cms.auth.entity.User;
 import com.cms.common.entity.BaseEntity;
+import com.cms.common.enums.AdminDesignation;
 import com.cms.common.enums.Gender;
 import com.cms.common.enums.BloodGroup;
+import com.cms.department.entity.Department;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +30,10 @@ public class Admin extends BaseEntity {
 
     @Column(name = "employee_id", nullable = false, unique = true)
     private String employeeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
@@ -61,7 +67,7 @@ public class Admin extends BaseEntity {
     @Column(name = "permanent_address", length = 2000)
     private String permanentAddress;
 
-    @Column(name = "phone_number", length = 20)
+    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
     private String phoneNumber;
 
     @Column(name = "emergency_contact_name", length = 100)
@@ -70,8 +76,9 @@ public class Admin extends BaseEntity {
     @Column(name = "emergency_contact_phone", length = 20)
     private String emergencyContactPhone;
 
-    @Column(nullable = false)
-    private String designation;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private AdminDesignation designation;
 
     @Column(name = "joining_date")
     private LocalDate joiningDate;
