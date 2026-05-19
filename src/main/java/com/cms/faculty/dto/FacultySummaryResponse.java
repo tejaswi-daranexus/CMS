@@ -27,5 +27,7 @@ public class FacultySummaryResponse {
 
     private FacultyDesignation designation;
 
+    private Integer experienceYears;
+
     private UserStatus status;
 }

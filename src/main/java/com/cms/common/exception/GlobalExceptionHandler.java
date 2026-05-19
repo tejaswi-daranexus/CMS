@@ -7,6 +7,32 @@ import org.springframework.web.bind.annotation.*;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<String> handleNotFound(
+            ResourceNotFoundException ex
+    ) {
+
+        return new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<String> handleForbidden(
+            ForbiddenException ex
+    ) {
+
+        return new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<String> handleRuntime(RuntimeException ex) {
