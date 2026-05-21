@@ -31,22 +31,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ❌ disable csrf for REST APIs
                 .csrf(csrf -> csrf.disable())
 
-                // ✅ custom auth error handling
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
 
-                // ✅ route authentication only
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/cms/api/v1/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // ✅ JWT filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
