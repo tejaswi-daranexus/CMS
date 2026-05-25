@@ -39,7 +39,12 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/cms/api/v1/auth/**").permitAll()
+                        .requestMatchers(
+                                "/cms/api/v1/auth/**",
+                                "/api/messages/**",
+                                "/api/notifications/**"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
 
